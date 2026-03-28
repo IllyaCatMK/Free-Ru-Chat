@@ -1,0 +1,5 @@
+{
+  "name": "Global Chat Connect",
+  "description": "A real-time global chat application where users can register and talk with people from all over the world.",
+  "requestFramePermissions": []
+}

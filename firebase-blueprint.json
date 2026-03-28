@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "UserPublic": {
+      "title": "User Public Profile",
+      "description": "Publicly visible information about a user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "lastSeen": { "type": "string", "format": "date-time" },
+        "setupComplete": { "type": "boolean" },
+        "nickname": { "type": "string" }
+      },
+      "required": ["uid", "displayName"]
+    },
+    "UserPrivate": {
+      "title": "User Private Data",
+      "description": "Private information about a user, only visible to them.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "language": { "type": "string" },
+        "setupComplete": { "type": "boolean" }
+      },
+      "required": ["email"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A chat message.",
+      "type": "object",
+      "properties": {
+        "senderUid": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderPhoto": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderUid", "senderName", "text", "createdAt"]
+    },
+    "PrivateChat": {
+      "title": "Private Chat Session",
+      "description": "Metadata for a private chat between two users.",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["participants", "updatedAt"]
+    },
+    "Group": {
+      "title": "Group Chat",
+      "description": "Metadata for a group chat.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "members": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "createdBy", "members", "updatedAt", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users_public/{userId}": {
+      "schema": "UserPublic",
+      "description": "Public profiles of all users."
+    },
+    "/users_private/{userId}": {
+      "schema": "UserPrivate",
+      "description": "Private data of users."
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Global chat messages."
+    },
+    "/private_chats/{chatId}": {
+      "schema": "PrivateChat",
+      "description": "Private chat sessions."
+    },
+    "/private_chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages within a private chat."
+    },
+    "/groups/{groupId}": {
+      "schema": "Group",
+      "description": "Group chat metadata."
+    },
+    "/groups/{groupId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages within a group chat."
+    }
+  }
+}
