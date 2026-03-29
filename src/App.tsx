@@ -12,7 +12,12 @@ import {
   signOut, 
   User as FirebaseUser,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  updatePassword,
+  deleteUser,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { 
   collection, 
@@ -28,7 +33,9 @@ import {
   Timestamp,
   where,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  getDocs,
+  writeBatch
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { 
@@ -113,7 +120,26 @@ const translations: Record<string, any> = {
     deleteGroup: "Delete Group",
     confirmDeleteGroup: "Are you sure you want to delete this group? This action cannot be undone.",
     delete: "Delete",
+    security: "Security",
+    changePassword: "Change Password",
+    newPassword: "New Password",
+    updatePassword: "Update Password",
+    passwordUpdated: "Password updated successfully!",
+    reauthRequired: "For security reasons, please sign out and sign back in before changing your password.",
+    reauthenticate: "Re-authenticate",
+    reauthDescription: "Please enter your current password to confirm this sensitive operation.",
+    currentPassword: "Current Password",
+    confirm: "Confirm",
     cancel: "Cancel",
+    forgotPassword: "Forgot Password?",
+    resetEmailSent: "Password reset email sent! Check your inbox.",
+    deleteAccount: "Delete Account",
+    confirmDeleteAccount: "Are you sure you want to delete your account? This action is permanent and will delete your profile and messages.",
+    adminZone: "Admin Zone",
+    resetAppData: "Reset All App Data",
+    confirmResetAppData: "WARNING: This will delete ALL messages, groups, and private chats from the entire app. This cannot be undone.",
+    dataResetSuccess: "All app data has been reset successfully.",
+    operation: "Operation",
   },
   ru: {
     globalChat: "Глобальный чат",
@@ -150,6 +176,26 @@ const translations: Record<string, any> = {
     enterGroupName: "Введите название группы...",
     groupAbout: "О чем эта группа?",
     groupIconPlaceholder: "https://example.com/icon.png",
+    security: "Безопасность",
+    changePassword: "Изменить пароль",
+    newPassword: "Новый пароль",
+    updatePassword: "Обновить пароль",
+    passwordUpdated: "Пароль успешно обновлен!",
+    reauthRequired: "В целях безопасности, пожалуйста, выйдите и войдите снова перед сменой пароля.",
+    reauthenticate: "Повторная аутентификация",
+    reauthDescription: "Пожалуйста, введите ваш текущий пароль, чтобы подтвердить эту важную операцию.",
+    currentPassword: "Текущий пароль",
+    confirm: "Подтвердить",
+    cancel: "Отмена",
+    forgotPassword: "Забыли пароль?",
+    resetEmailSent: "Письмо для сброса пароля отправлено! Проверьте почту.",
+    deleteAccount: "Удалить аккаунт",
+    confirmDeleteAccount: "Вы уверены, что хотите удалить свой аккаунт? Это действие необратимо и удалит ваш профиль и сообщения.",
+    adminZone: "Зона администратора",
+    resetAppData: "Сбросить все данные приложения",
+    confirmResetAppData: "ВНИМАНИЕ: Это удалит ВСЕ сообщения, группы и личные чаты из всего приложения. Это действие нельзя отменить.",
+    dataResetSuccess: "Все данные приложения были успешно сброшены.",
+    operation: "Операция",
   },
   es: {
     globalChat: "Chat Global",
@@ -186,6 +232,26 @@ const translations: Record<string, any> = {
     enterGroupName: "Introduce el nombre del grupo...",
     groupAbout: "¿De qué trata este grupo?",
     groupIconPlaceholder: "https://example.com/icon.png",
+    security: "Seguridad",
+    changePassword: "Cambiar Contraseña",
+    newPassword: "Nueva Contraseña",
+    updatePassword: "Actualizar Contraseña",
+    passwordUpdated: "¡Contraseña actualizada con éxito!",
+    reauthRequired: "Por razones de seguridad, por favor cierra sesión e inicia sesión de nuevo antes de cambiar tu contraseña.",
+    reauthenticate: "Re-autenticar",
+    reauthDescription: "Por favor, introduce tu contraseña actual para confirmar esta operación sensible.",
+    currentPassword: "Contraseña Actual",
+    confirm: "Confirmar",
+    cancel: "Cancelar",
+    forgotPassword: "¿Olvidaste tu contraseña?",
+    resetEmailSent: "¡Correo de restablecimiento de contraseña enviado! Revisa tu bandeja de entrada.",
+    deleteAccount: "Eliminar Cuenta",
+    confirmDeleteAccount: "¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es permanente y eliminará tu perfil y mensajes.",
+    adminZone: "Zona de Administrador",
+    resetAppData: "Restablecer Todos los Datos de la Aplicación",
+    confirmResetAppData: "ADVERTENCIA: Esto eliminará TODOS los mensajes, grupos y chats privados de toda la aplicación. Esto no se puede deshacer.",
+    dataResetSuccess: "Todos los datos de la aplicación se han restablecido con éxito.",
+    operation: "Operación",
   },
   fr: {
     globalChat: "Chat Global",
@@ -222,6 +288,26 @@ const translations: Record<string, any> = {
     enterGroupName: "Entrez le nom du groupe...",
     groupAbout: "De quoi parle ce groupe ?",
     groupIconPlaceholder: "https://example.com/icon.png",
+    security: "Sécurité",
+    changePassword: "Changer le mot de passe",
+    newPassword: "Nouveau mot de passe",
+    updatePassword: "Mettre à jour le mot de passe",
+    passwordUpdated: "Mot de passe mis à jour avec succès !",
+    reauthRequired: "Pour des raisons de sécurité, veuillez vous déconnecter et vous reconnecter avant de changer votre mot de passe.",
+    reauthenticate: "Ré-authentifier",
+    reauthDescription: "Veuillez saisir votre mot de passe actuel pour confirmer cette opération sensible.",
+    currentPassword: "Mot de passe actuel",
+    confirm: "Confirmer",
+    cancel: "Annuler",
+    forgotPassword: "Mot de passe oublié ?",
+    resetEmailSent: "E-mail de réinitialisation du mot de passe envoyé ! Vérifiez votre boîte de réception.",
+    deleteAccount: "Supprimer le compte",
+    confirmDeleteAccount: "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est permanente et supprimera votre profil et vos messages.",
+    adminZone: "Zone Administrateur",
+    resetAppData: "Réinitialiser toutes les données de l'application",
+    confirmResetAppData: "AVERTISSEMENT : Cela supprimera TOUS les messages, groupes et chats privés de toute l'application. Cette action est irréversible.",
+    dataResetSuccess: "Toutes les données de l'application ont été réinitialisées avec succès.",
+    operation: "Opération",
   },
   de: {
     globalChat: "Globaler Chat",
@@ -258,6 +344,26 @@ const translations: Record<string, any> = {
     enterGroupName: "Gruppennamen eingeben...",
     groupAbout: "Worum geht es in dieser Gruppe?",
     groupIconPlaceholder: "https://example.com/icon.png",
+    security: "Sicherheit",
+    changePassword: "Passwort ändern",
+    newPassword: "Neues Passwort",
+    updatePassword: "Passwort aktualisieren",
+    passwordUpdated: "Passwort erfolgreich aktualisiert!",
+    reauthRequired: "Aus Sicherheitsgründen melde dich bitte ab und wieder an, bevor du dein Passwort änderst.",
+    reauthenticate: "Erneut authentifizieren",
+    reauthDescription: "Bitte gib dein aktuelles Passwort ein, um diesen sensiblen Vorgang zu bestätigen.",
+    currentPassword: "Aktuelles Passwort",
+    confirm: "Bestätigen",
+    cancel: "Abbrechen",
+    forgotPassword: "Passwort vergessen?",
+    resetEmailSent: "E-Mail zum Zurücksetzen des Passworts gesendet! Überprüfe deinen Posteingang.",
+    deleteAccount: "Konto löschen",
+    confirmDeleteAccount: "Bist du sicher, dass du dein Konto löschen möchtest? Diese Aktion ist dauerhaft und löscht dein Profil und deine Nachrichten.",
+    adminZone: "Admin-Bereich",
+    resetAppData: "Alle App-Daten zurücksetzen",
+    confirmResetAppData: "WARNUNG: Dies löscht ALLE Nachrichten, Gruppen und privaten Chats aus der gesamten App. Dies kann nicht rückgängig gemacht werden.",
+    dataResetSuccess: "Alle App-Daten wurden erfolgreich zurückgesetzt.",
+    operation: "Vorgang",
   }
 };
 
@@ -434,6 +540,19 @@ const LoginScreen = ({ t }: { t: (key: string) => string }) => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      alert(t('resetEmailSent'));
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-700 p-4">
       <motion.div 
@@ -481,6 +600,16 @@ const LoginScreen = ({ t }: { t: (key: string) => string }) => {
             </div>
             
             {error && <p className="text-xs text-red-500 font-medium px-1">{error}</p>}
+
+            {!isRegistering && (
+              <button 
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-all px-1"
+              >
+                {t('forgotPassword')}
+              </button>
+            )}
 
             <button 
               type="submit"
@@ -674,6 +803,17 @@ const ChatApp = ({ user }: { user: FirebaseUser }) => {
   const [editName, setEditName] = useState(user.displayName || '');
   const [editPhoto, setEditPhoto] = useState(user.photoURL || '');
   const [editNickname, setEditNickname] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  
+  // Re-authentication state
+  const [showReauthModal, setShowReauthModal] = useState(false);
+  const [reauthPassword, setReauthPassword] = useState('');
+  const [reauthAction, setReauthAction] = useState<'delete' | 'password' | null>(null);
+  const [reauthError, setReauthError] = useState('');
+  const [isReauthenticating, setIsReauthenticating] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isDeletingAllUsers, setIsDeletingAllUsers] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const t = (key: string, params?: Record<string, string>) => {
@@ -942,6 +1082,188 @@ const ChatApp = ({ user }: { user: FirebaseUser }) => {
       alert("Profile updated successfully!");
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users_public/${user.uid}`);
+    }
+  };
+
+  const handleChangePassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setPasswordError('');
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return;
+    }
+    try {
+      await updatePassword(user, newPassword);
+      alert(t('passwordUpdated'));
+      setNewPassword('');
+    } catch (error: any) {
+      if (error.code === 'auth/requires-recent-login') {
+        setReauthAction('password');
+        setShowReauthModal(true);
+      } else {
+        setPasswordError(error.message);
+      }
+    }
+  };
+
+  const handleDeleteAccount = async (skipConfirm = false) => {
+    if (!skipConfirm && !window.confirm(t('confirmDeleteAccount'))) return;
+    
+    setIsDeletingAccount(true);
+    try {
+      // Helper for batch deletion
+      const deleteInBatches = async (querySnapshot: any) => {
+        const docs = querySnapshot.docs;
+        for (let i = 0; i < docs.length; i += 500) {
+          const batch = writeBatch(db);
+          const chunk = docs.slice(i, i + 500);
+          chunk.forEach((doc: any) => batch.delete(doc.ref));
+          await batch.commit();
+        }
+      };
+
+      // 1. Delete user's messages in global chat
+      const globalMessagesQuery = query(collection(db, 'messages'), where('senderUid', '==', user.uid));
+      const globalMessagesSnapshot = await getDocs(globalMessagesQuery);
+      await deleteInBatches(globalMessagesSnapshot);
+
+      // 2. Delete user's messages in private chats
+      const privateChatsQuery = query(collection(db, 'private_chats'), where('participants', 'array-contains', user.uid));
+      const privateChatsSnapshot = await getDocs(privateChatsQuery);
+      for (const chatDoc of privateChatsSnapshot.docs) {
+        const privateMessagesQuery = query(collection(db, 'private_chats', chatDoc.id, 'messages'), where('senderUid', '==', user.uid));
+        const privateMessagesSnapshot = await getDocs(privateMessagesQuery);
+        await deleteInBatches(privateMessagesSnapshot);
+      }
+
+      // 3. Delete user's messages in groups and handle group membership/ownership
+      const groupsQuery = query(collection(db, 'groups'), where('members', 'array-contains', user.uid));
+      const groupsSnapshot = await getDocs(groupsQuery);
+      for (const groupDoc of groupsSnapshot.docs) {
+        const groupData = groupDoc.data();
+        
+        // Delete user's messages in this group
+        const groupMessagesQuery = query(collection(db, 'groups', groupDoc.id, 'messages'), where('senderUid', '==', user.uid));
+        const groupMessagesSnapshot = await getDocs(groupMessagesQuery);
+        await deleteInBatches(groupMessagesSnapshot);
+
+        // If user is the creator, delete the group entirely
+        if (groupData.createdBy === user.uid) {
+          // Delete all messages in the group first
+          const allMessagesSnapshot = await getDocs(collection(db, 'groups', groupDoc.id, 'messages'));
+          await deleteInBatches(allMessagesSnapshot);
+          
+          // Delete the group document
+          await deleteDoc(doc(db, 'groups', groupDoc.id));
+        } else if (groupData.members && groupData.members.includes(user.uid)) {
+          // Remove user from members list if they are not the creator
+          const newMembers = groupData.members.filter((m: string) => m !== user.uid);
+          await updateDoc(doc(db, 'groups', groupDoc.id), {
+            members: newMembers
+          });
+        }
+      }
+
+      // 4. Delete Firestore documents
+      await deleteDoc(doc(db, 'users_public', user.uid));
+      await deleteDoc(doc(db, 'users_private', user.uid));
+      
+      // 5. Delete Auth user
+      await deleteUser(user);
+      
+      alert("Account deleted successfully.");
+    } catch (error: any) {
+      if (error.code === 'auth/requires-recent-login') {
+        setReauthAction('delete');
+        setShowReauthModal(true);
+      } else {
+        handleFirestoreError(error, OperationType.DELETE, 'account_deletion');
+      }
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
+  const handleReauthenticate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setReauthError('');
+    setIsReauthenticating(true);
+    try {
+      const providerId = user.providerData[0]?.providerId;
+      
+      if (providerId === 'google.com') {
+        const provider = new GoogleAuthProvider();
+        await reauthenticateWithCredential(user, GoogleAuthProvider.credentialFromResult(await signInWithPopup(auth, provider))!);
+      } else {
+        const credential = EmailAuthProvider.credential(user.email!, reauthPassword);
+        await reauthenticateWithCredential(user, credential);
+      }
+
+      setShowReauthModal(false);
+      setReauthPassword('');
+      
+      // Proceed with the original action
+      if (reauthAction === 'delete') {
+        await handleDeleteAccount(true);
+      } else if (reauthAction === 'password') {
+        await handleChangePassword();
+      }
+    } catch (error: any) {
+      setReauthError(error.message);
+    } finally {
+      setIsReauthenticating(false);
+    }
+  };
+
+  const handleDeleteAllUsers = async () => {
+    if (!window.confirm("WARNING: This will delete ALL users from Firebase Authentication and Firestore (except your account). This action is irreversible. Continue?")) return;
+    
+    setIsDeletingAllUsers(true);
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/admin/delete-all-users', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to delete users");
+
+      alert(data.message);
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Error deleting all users:", error);
+      alert("Error deleting all users: " + error.message);
+    } finally {
+      setIsDeletingAllUsers(false);
+    }
+  };
+
+  const handleResetAppData = async () => {
+    if (!window.confirm(t('confirmResetAppData'))) return;
+    
+    try {
+      const collectionsToClear = ['messages', 'groups', 'private_chats'];
+      
+      for (const collName of collectionsToClear) {
+        const snapshot = await getDocs(collection(db, collName));
+        const docs = snapshot.docs;
+        for (let i = 0; i < docs.length; i += 500) {
+          const batch = writeBatch(db);
+          const chunk = docs.slice(i, i + 500);
+          chunk.forEach((doc: any) => batch.delete(doc.ref));
+          await batch.commit();
+        }
+      }
+      
+      alert(t('dataResetSuccess'));
+      window.location.reload();
+    } catch (error) {
+      console.error("Error resetting app data:", error);
+      alert("Error resetting app data: " + (error as Error).message);
     }
   };
 
@@ -1341,6 +1663,80 @@ const ChatApp = ({ user }: { user: FirebaseUser }) => {
             </section>
 
             <section className="space-y-4">
+              <h3 className={`text-sm font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('security')}</h3>
+              <div className="space-y-4">
+                <form onSubmit={handleChangePassword} className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-6 rounded-2xl border space-y-4`}>
+                  <div className="space-y-2">
+                    <label className={`text-xs font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('newPassword')}</label>
+                    <div className="relative">
+                      <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                      <input 
+                        type="password" 
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder={t('passwordPlaceholder')}
+                        className={`w-full pl-10 pr-4 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200'}`}
+                        required
+                      />
+                    </div>
+                  </div>
+                  {passwordError && <p className="text-xs text-red-500 font-medium">{passwordError}</p>}
+                  <button 
+                    type="submit"
+                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
+                  >
+                    {t('updatePassword')}
+                  </button>
+                </form>
+
+                <div className={`${isDarkMode ? 'bg-red-900/10 border-red-900/20' : 'bg-red-50 border-red-100'} p-6 rounded-2xl border space-y-4`}>
+                  <div className="flex items-center gap-3 text-red-600">
+                    <AlertCircle className="w-5 h-5" />
+                    <h4 className="font-bold">{t('deleteAccount')}</h4>
+                  </div>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {t('confirmDeleteAccount')}
+                  </p>
+                  <button 
+                    onClick={() => handleDeleteAccount()}
+                    disabled={isDeletingAccount}
+                    className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-500/20 disabled:opacity-50"
+                  >
+                    {isDeletingAccount ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t('deleteAccount')}
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {user.email === 'peterpaskartolg@gmail.com' && (
+              <section className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-orange-500">{t('adminZone')}</h3>
+                <div className={`${isDarkMode ? 'bg-orange-900/10 border-orange-900/20' : 'bg-orange-50 border-orange-100'} p-6 rounded-2xl border space-y-4`}>
+                  <div className="flex items-center gap-3 text-orange-600">
+                    <Settings className="w-5 h-5" />
+                    <h4 className="font-bold">{t('adminZone')}</h4>
+                  </div>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {t('confirmResetAppData')}
+                  </p>
+                  <button 
+                    onClick={handleResetAppData}
+                    className="w-full py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700 transition-all shadow-lg shadow-orange-500/20"
+                  >
+                    {t('resetAppData')}
+                  </button>
+                  <button 
+                    onClick={handleDeleteAllUsers}
+                    disabled={isDeletingAllUsers}
+                    className="w-full py-3 bg-red-800 text-white rounded-xl font-bold hover:bg-red-900 transition-all shadow-lg shadow-red-900/20 disabled:opacity-50"
+                  >
+                    {isDeletingAllUsers ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Delete All Users (Auth + Firestore)"}
+                  </button>
+                </div>
+              </section>
+            )}
+
+            <section className="space-y-4">
               <h3 className={`text-sm font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('signOut')}</h3>
               <button 
                 onClick={() => signOut(auth)}
@@ -1460,6 +1856,108 @@ const ChatApp = ({ user }: { user: FirebaseUser }) => {
                   {t('cancel')}
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showReauthModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => {
+                if (!isReauthenticating) {
+                  setShowReauthModal(false);
+                  setReauthPassword('');
+                  setReauthError('');
+                }
+              }}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className={`relative max-w-sm w-full rounded-3xl shadow-2xl p-8 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}
+            >
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Lock className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-center mb-2">{t('reauthenticate')}</h3>
+              <p className={`text-center mb-6 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                {user.providerData[0]?.providerId === 'google.com' 
+                  ? "Please re-authenticate with Google to confirm this sensitive operation."
+                  : t('reauthDescription')}
+              </p>
+              
+              {user.providerData[0]?.providerId === 'google.com' ? (
+                <div className="space-y-4">
+                  <button 
+                    onClick={() => handleReauthenticate()}
+                    disabled={isReauthenticating}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white border border-gray-100 rounded-2xl text-gray-700 font-semibold hover:bg-gray-50 hover:border-blue-200 transition-all shadow-lg shadow-blue-500/5 disabled:opacity-50"
+                  >
+                    {isReauthenticating ? (
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                    ) : (
+                      <>
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+                        Re-authenticate with Google
+                      </>
+                    )}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setShowReauthModal(false);
+                      setReauthError('');
+                    }}
+                    disabled={isReauthenticating}
+                    className={`w-full py-4 rounded-2xl font-bold transition-all ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    {t('cancel')}
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleReauthenticate} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('currentPassword')}</label>
+                    <input 
+                      type="password"
+                      value={reauthPassword}
+                      onChange={(e) => setReauthPassword(e.target.value)}
+                      className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500/20 outline-none ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200'}`}
+                      required
+                      autoFocus
+                    />
+                  </div>
+
+                  {reauthError && <p className="text-xs text-red-500 font-medium">{reauthError}</p>}
+
+                  <div className="flex flex-col gap-3 pt-2">
+                    <button 
+                      type="submit"
+                      disabled={isReauthenticating}
+                      className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                    >
+                      {isReauthenticating ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : t('confirm')}
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setShowReauthModal(false);
+                        setReauthPassword('');
+                        setReauthError('');
+                      }}
+                      disabled={isReauthenticating}
+                      className={`w-full py-4 rounded-2xl font-bold transition-all ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}
+                    >
+                      {t('cancel')}
+                    </button>
+                  </div>
+                </form>
+              )}
             </motion.div>
           </div>
         )}

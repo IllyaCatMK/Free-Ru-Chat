@@ -102,18 +102,23 @@ service cloud.firestore {
       // Only admins can change roles
       allow write: if isOwner(userId) && isValidUserPublic(request.resource.data) && 
         (!('role' in request.resource.data) || (request.resource.data.role == (resource == null ? 'user' : resource.data.role)) || isAdmin());
+      // Allow users to delete their own profile, and admins to delete any profile
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     match /users_private/{userId} {
       // Private data only readable/writable by owner
       allow read: if isOwner(userId);
       allow write: if isOwner(userId) && isValidUserPrivate(request.resource.data);
+      // Allow users to delete their own private data, and admins to delete any
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     match /messages/{messageId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && isValidMessage(request.resource.data);
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.senderUid == request.auth.uid);
     }
 
     match /private_chats/{chatId} {
@@ -122,6 +127,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (resource == null || request.auth.uid in resource.data.participants);
       allow create: if isAuthenticated() && isValidPrivateChat(request.resource.data);
       allow update: if isAuthenticated() && request.auth.uid in resource.data.participants && isValidPrivateChat(request.resource.data);
+      allow delete: if isAdmin();
       
       match /messages/{messageId} {
         // Allow reading messages if the chat exists and user is a participant, 
@@ -134,6 +140,7 @@ service cloud.firestore {
           exists(/databases/$(database)/documents/private_chats/$(chatId)) &&
           request.auth.uid in get(/databases/$(database)/documents/private_chats/$(chatId)).data.participants && 
           isValidMessage(request.resource.data);
+        allow delete: if isAdmin() || (isAuthenticated() && resource.data.senderUid == request.auth.uid);
       }
     }
 
@@ -151,13 +158,14 @@ service cloud.firestore {
           request.resource.data.photoURL == resource.data.photoURL &&
           request.resource.data.members == resource.data.members
         ));
-      allow delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      allow delete: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
 
       match /messages/{messageId} {
         allow read: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members;
         allow create: if isAuthenticated() && 
           request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members && 
           isValidMessage(request.resource.data);
+        allow delete: if isAdmin() || (isAuthenticated() && (resource.data.senderUid == request.auth.uid || get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy == request.auth.uid));
       }
     }
   }
